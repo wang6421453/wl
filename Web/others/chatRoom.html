@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>群聊室</title>
+  <link rel="stylesheet" href="../css/bootstrap.min.css">
+  <script type="text/javascript" src="../js/socket.io.js"></script>
+  <script src="../js/jquery-1.8.2.js"></script>
+  <script src="../js/my/util.js"></script>
+   <style>
+     html{height:100%;}
+     body{height:100%;}
+     .send_btn{
+	    width:100%;height:100%;color:green;background:#ffcc00;border:0px;hover:background:red;
+	 }
+     .send_btn:hover{
+	   background:#00ff00;
+	 }
+	 .send_eidt{
+	   height:100%;width:50%;border:1px solid #00ff00;overflow: auto;float:left;
+	 }
+	 .pic_input{
+	    width:40px;height:26px; filter:alpha(opacity=0);-moz-opacity:0;opacity:0;cursor:pointer;
+	 }
+	 .pic_div{
+	    float:left;width:40px;height:26px;margin-top:-26px;border:1px solid #99D3F5;text-align:center;border-radius: 4px;background:#D0EEFF;cursor:pointer;
+	 }
+	 .pic_div:hover{
+	    background:#00ff00;
+	 }
+	 .functionBtn{
+	    background:#D0EEFF;border-radius: 4px;border:1px solid #99D3F5;height:26px;
+	 }
+  </style>
+ </head>
+  <body onload="init()">
+ 
+  <div style="height:100%">
+     <div id ='login_div' class="form-group" style="margin-top:200px">
+	      <div class="col-md-3 col-md-offset-3">
+	           <input class="form-control" id="name" placeholder="请输入昵称..." />
+	      </div>
+	      <div class="col-md-2" style="margin-top:-5px">
+	          <button id ="login" type="button" class="btn btn-lg btn-success btn-block" onclick="login()">开始吐槽</button>
+		  </div>
+	 </div>
+	 
+	 
+	 <div id="chat_div" style="display:none;height:100%;margin-left:100px">
+	    <div style="height:5%"><h2>欢迎进入聊天室</h2></div>
+	    <div style="height:95%">
+		    <div id="contextBox" style="height:70%">
+		        <!-- 聊天内容 -->
+			    <div id="chatContent" style="float:left;height:100%;width:60%;border:1px solid #00ff00;overflow: auto;"></div>
+			    <!-- 历史记录 -->
+			    <div id="chatHistory" style="float:left;height:100%;width:30%;margin-left:10px;border:1px solid #00ff00;display:none">
+			       <div id="chatHistoryContent" style="height:97%;width:100%;overflow:auto;border-bottom:1px solid #00ff00"></div>
+			       <div id="chatHistoryPage" style="height:3%;width:100%;text-align:center"><a>上一页</a> <a>下一页</a></div>
+			    </div>
+			    <div style="clear:both"></div>
+			</div>
+			<div id="functionBtn" style="height:26px">
+			    <div style="float:left;overflow:hidden;width:40px"><input type="file" class="pic_input" id="pic_input" accept="image/*" onchange="showPic(event)" title="选择发送图片"></input><div class="pic_div">图片</div></div>
+			    <div style="float:left;margin-left:3px;"><input id="chatHistoryBtn" class="functionBtn" type="button" value="聊天记录" onclick="showChatHistory()" title="显示聊天记录"></input></div>
+			    <div style="float:left;margin-left:3px;"><input id="clearChatBtn" class="functionBtn" type="button" value="清屏" onclick="clearChat()" title="清空聊天内容"></input></div>
+			    <div style="float:left;margin-left:3px;"><input id="shakeBtn" class="functionBtn" type="button" value="抖一下" onclick="sendShake()" title="抖动一下"></input></div>
+			    <div style="float:left;margin-left:3px;"><input id="colorBtn" type="color" value="#000000"  title="设置字体颜色" oninput="changeTextColor(value)"></input></div>
+			    <div style="clear:both"></div>
+			</div>
+			<div style="height:15%">
+			     <!-- 输入框 -->
+			     <div id="sendContent" contenteditable="true" class="send_eidt" onkeydown="keydownListen(event)" onpaste="pasteListen(event)" ondrop="drop(event)"></div>
+			     <!-- 发送按钮 -->
+			     <div style="float:left;height:100%;width:9%;margin-left:1%"><input  class="send_btn" type="button" value="吐槽（ctrl+Enter）" onclick="send()"></input></div>
+			</div>
+		 </div>
+	 </div>
+  </div>
+  </body>
+  <script>
+     var serverAddr ="10.67.7.63";
+     var port = "1337";
+	 var socket={};
+	 var name="";
+	 var isActive = true; //是否停留在当前页面
+	 var clockerId;
+	 var messages={};
+	 //初始化查询信息声明
+	 var searchInfo = {
+			name : 'wl',
+			content : '进入',
+			time : '',
+			pageNo : 1,
+			pageSize : 30
+		};
+	 
+	 //初始化
+	 function init(){
+		 socket = io.connect("http://10.67.7.63:1337");
+		 var chatContent_div = document.getElementById("chatContent");
+		 //监听登陆返回消息
+		 socket.on("login", function(msg){
+			  if(msg.status == 'ok'){
+			     //alert("登陆成功");
+				 document.getElementById("login_div").style.display = "none";
+				 document.getElementById("chat_div").style.display = "block";
+				 
+				 //监听服务端消息
+			     socket.on("msg", function(msg){
+			    	  chatContent_div.innerHTML += ("</br>" + msg.name + "(" + Util.formatDate(msg.time) +"): " + msg.content);
+			    	  //使消息始终保持在最底端
+			    	  chatContent_div.scrollTop = chatContent_div.scrollHeight;
+			    	  //如果不在当前页面，增加消息提醒
+			    	  if(!isActive){
+			    		  clearInterval(clockerId); //先清除之前的定时器
+			    		  clockerId = setInterval("messageRemind()", 380);
+			    	  }
+				 });
+				 
+			     //监听服务端命令
+			     socket.on("cmd", function(cmd){
+			    	 var content = cmd.content;
+                     if(content == "shake"){
+                    	 shake(); //触发抖动事件，暂时支持支ie
+                    	 chatContent_div.innerHTML += ("</br>" + cmd.name + "(" + Util.formatDate(cmd.time) +"): " + "抖了你一下。");
+                    	 //如果不在当前页面，增加消息提醒
+   			    	     if(!isActive){
+   			    		    clearInterval(clockerId); //先清除之前的定时器
+   			    		    clockerId = setInterval("messageRemind()", 380);
+   			    	     }
+                     }
+				 });
+			  }else{
+			     alert(msg.reason); //弹出提示信息
+			  }
+		     });
+	 }
+	 
+	 //页面被激活触发事件
+	 window.onfocus = function(){
+		 isActive = true;
+		 clearInterval(clockerId);
+		 document.title='群聊室';
+	 };
+	 //页面失焦触发事件
+	 window.onblur = function(){
+		 isActive = false;
+	 };
+	 //消息提醒
+	 var step = 0;
+	 function messageRemind(){
+		 if(!isActive){
+		     step++
+		     if (step==3) {step=1}         
+		     if (step==1) {document.title='【你有新的消息】'}
+		     if (step==2) {document.title='【　　　　　　】'}
+		  }
+	 }
+	 
+	 
+	 //发送登陆请求
+	 function login(){
+	      //socket = io.connect("http://10.67.7.13:1337");  //不然每次点登陆都是创建一个新的连接
+		  name = document.getElementById("name").value;
+		  //emit可以自定义消息头，而send固定为message（实践得出，不一定正确）
+		  socket.emit('login', {"name":name}); 
+	 }
+	 
+	 //发送消息
+	 function send(){
+		 var content = document.getElementById("sendContent").innerHTML;
+		 //document.getElementById("chatContent").innerHTML += ("</br>" + name + ": " + content);
+		 socket.emit('msg', {"name":name,"content":content});
+		 document.getElementById("sendContent").innerHTML = "";
+	}
+		
+	//监听按钮
+	function keydownListen(event){
+		if(event.ctrlKey && event.keyCode == 13){
+			send();
+		}
+	}
+	
+	//监听粘贴事件
+	function pasteListen(event){
+		var pasteContent = null;
+		if(window.clipboardData && window.clipboardData.getData){ //IE	
+			pasteContent = window.clipboardData.getData("Text");
+		}else{
+			//pasteContent = event.clipboardData.getData("Text"); //chrome等其他浏览器
+			var clipboardData = event.clipboardData;
+			var items,item,types;
+			if(clipboardData){
+				items = clipboardData.items;
+				types = clipboardData.types;
+				for(var i = 0; i<items.length; i++){
+					if(types[i] == "Files" && items[i] && items[i].type.match(/^image\//i)){
+						var file = items[i].getAsFile();
+						readImg(file);
+					}else if(items[i] && items[i].type.match(/^text\//i)){
+						pasteContent = event.clipboardData.getData("Text");
+					}
+				}
+			}
+		}
+		//event.returnValue = false;  //禁止粘贴
+		return true;   //作用不大
+	}
+	
+	//读取图像
+	function readImg(file){
+		var fileReader = new FileReader(); 
+		fileReader.onload = function(e){
+			var img = new Image();
+			img.src = e.target.result;
+			document.getElementById("sendContent").appendChild(img);
+		}
+		fileReader.readAsDataURL(file);
+	}
+	
+	//显示选中的图片
+	function showPic(event){
+		var file = event.target.files[0];
+		readImg(file);
+	}
+	
+	//显示聊天记录
+	function showChatHistory(){
+		var butText = document.getElementById("chatHistoryBtn").value;
+		if(butText == "聊天记录"){
+			document.getElementById("chatHistoryBtn").value = "隐藏记录";
+			
+			document.getElementById("chatHistory").style.display="block";
+			/* var xhr = new XMLHttpRequest();
+			xhr.open("GET", "http://10.67.7.13:1337/showChatHistory", true);
+			xhr.onreadystatechange = function(){
+				if(xhr.readyState == 4 && xhr.status == 200){
+				   alert(xhr.responseText);
+				}
+			};
+			xhr.send(null); */
+			
+			//使用ajax(JSONP解决跨域问题)
+			$.ajax({
+				url:"http://10.67.7.63:1337/showChatHistory",
+				type:"GET",
+				dataType:"JSONP",
+				data:searchInfo,
+				success:function(data){
+					var messageCount = data.messageCount;
+					var messageList = data.messageList;
+					document.getElementById("chatHistoryContent").innerHTML = "";
+					for(d in messageList){
+					   document.getElementById("chatHistoryContent").innerHTML += (messageList[d].name + "(" + Util.formatDate(messageList[d].time) +"): "  + messageList[d].content + "</br>");
+					}
+					//使消息始终保持在最底端
+					var chatHistory_div = document.getElementById("chatHistoryContent");
+					chatHistory_div.scrollTop = chatHistory_div.scrollHeight;
+				}
+			});
+		}else if(butText == "隐藏记录"){
+			document.getElementById("chatHistoryBtn").value = "聊天记录";
+			
+			document.getElementById("chatHistory").style.display="none";
+		}
+	}
+	
+	 //停止拖动
+	 function drop(ev){
+	     ev.preventDefault();  //取消浏览器默认拖拽效果
+	     var fileList = ev.dataTransfer.files;  //获取文件对象
+	     if(fileList.length == 0){
+	    	 return;
+	     }
+	     var file = fileList[0];
+	     if(file.type.indexOf("image") == -1){
+	    	 alert("只能拖拽图片");
+	    	 return;
+	     }
+	     //预览图片
+	     readImg(file);
+	 }
+	 
+	 //清除聊天记录
+	 function clearChat(){
+		 var chatContent_div = document.getElementById("chatContent");
+		 chatContent_div.innerHTML = "";
+	 }
+	 
+	 //抖动(type=1:群体执行,type=2:个人执行)
+	 function sendShake(){
+		 socket.emit('cmd', {"name":name,"content":'shake',"type":"1"});
+	 }
+	 
+	 //处理抖动事件
+	 function shake(){
+		 window.focus(); //支持ie
+    	 if(window.top.moveBy){
+             for (i = 10; i > 0; i--){
+               for (j = 5; j > 0; j--){
+                   window.top.moveBy(0,i);
+                   window.top.moveBy(i,0);
+                   window.top.moveBy(0,-i);
+                   window.top.moveBy(-i,0);
+               }
+             }
+   		 }
+	 }
+	
+	 //设置选中字体颜色
+	 function changeTextColor(colorValue){
+		 document.execCommand("ForeColor", true, colorValue);
+	 }
+  </script>
+</html>

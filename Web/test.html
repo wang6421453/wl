@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>测试</title>
+<style>
+.box {
+	/* background-color: #666; */
+	height: 200px;
+	width: 200px;
+	margin-top: -100px;
+	margin-left: -100px;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	border:1px solid;
+}
+</style>
+</head>
+<body>
+     <!--  <textarea id="wl" rows="8" cols="80"> <div style ='color:red'>fdsa</div></textarea> -->
+      <div id="box" class="box">ggg;hh;j</div>
+      <!-- <video controls="controls" src="wl.mp4"></video> -->
+      <!-- <div class="wp" contenteditable="true" style="height:200px;width:200px;border:1px solid">dsf</div>
+      <div class="wp" contenteditable="true" style="height:200px;width:200px;border:1px solid">dgf</div>
+      <button onclick="showContent()">显示</button> -->
+</body>
+<script src="js/jquery-1.8.2.js"></script>
+<script src="js/nicEdit.js"></script>
+  <script>
+      $(function(){
+    	  var va = $("#box").html();
+    	  va = va.replace(/;/g,",");
+    	  $("#box").html(va);
+      })
+  </script>
+</html>

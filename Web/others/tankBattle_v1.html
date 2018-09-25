@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<!-- 坦克大战_可以控制移动_v1 -->
+<head><title>坦克大战</title></head>
+<body onload="drawTank()" onkeydown="moveTank(event)">
+   <canvas id="tankMap" width="400px" height="300px" style="background-color:#000000">
+   浏览器太低级，请换Chrome
+   </canvas>
+   <input type="text" x-webkit-speech x-webkit-grammar="builtin:translate"/>
+</body>
+<script language="javascript">
+  //得到画布
+  var canvas1 = document.getElementById("tankMap");
+  //得到绘图上下文（可以理解为画笔）
+  var cxt = canvas1.getContext("2d");
+  //画出自己的坦克
+  var x=40,y=40;
+  function drawTank(){
+      cxt.clearRect(0,0,400,300);
+      cxt.fillStyle="#ba9658";
+	  //画出左边的矩形
+	  cxt.fillRect(x-11,y-15,5,30);
+	  //画出右边的矩形
+	  cxt.fillRect(x+6,y-15,5,30);
+	  //画出中间的矩形
+	  cxt.fillRect(x-5,y-10,10,20);
+	  //画出中间的园 
+	  cxt.fillStyle="#fef26e";
+	  cxt.beginPath();
+	  cxt.arc(x,y,4,0,360,true);
+	  cxt.closePath();
+	  cxt.fill();	  
+	  //画出炮筒
+	  cxt.strokeStyle="#fef26e";
+	  cxt.lineWidth=2;
+	  cxt.beginPath();
+	  cxt.moveTo(x,y);
+	  cxt.lineTo(x,y-13);
+	  cxt.closePath();
+	  cxt.stroke();
+  }
+  
+  
+  function moveTank(event){
+     switch(event.keyCode){
+	   //上
+	   case 38:
+	   case 87: y-=10;drawTank();break;
+	   //左
+	   case 65:
+	   case 37: x-=10;drawTank();break;
+	   //右
+	   case 68:
+	   case 39: x+=10;drawTank();break;
+	   //下
+	   case 83:
+	   case 40: y+=10;drawTank();break;
+	 }
+  }
+</script>
+</html>

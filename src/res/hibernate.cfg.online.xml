@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+                                         "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+	<session-factory name="onlineDataBase">
+		<!-- Database connection settings 配置驱动 -->
+		<property name="connection.driver_class">com.mysql.jdbc.Driver</property>
+		<property name="connection.url"></property>
+		<property name="connection.username"></property>
+		<property name="connection.password"></property>
+			
+		<!-- JDBC connection pool (use the built-in) 连接池默认配置.提供对数据库操作速度 -->
+		<!-- <property name="connection.pool_size">2</property> -->
+		<!-- SQL dialect 配置方言. -->
+		<property name="dialect">org.hibernate.dialect.MySQLDialect</property>
+		<!-- Enable Hibernate's current session context 使用会话工厂 thread 则可以使用getCurrentSession(); -->
+		<property name="current_session_context_class">thread</property>
+		<!-- Echo all executed SQL to stdout 是否要在后台.演示翻译sql 语句 -->
+		<property name="show_sql">false</property>
+		<!-- 按照格式化的形式输出 -->
+		<property name="format_sql">true</property>
+		
+		<!-- 使用c3p0连接池，防止默认连接池会失去连接 -->
+		<property name="hibernate.connection.provider_class">org.hibernate.connection.C3P0ConnectionProvider</property>  
+	    <property name="hibernate.c3p0.min_size">5</property>  
+	    <property name="hibernate.c3p0.max_size">20</property>  
+	    <property name="hibernate.c3p0.timeout">1800</property>  
+	    <property name="hibernate.c3p0.max_statements">50</property>  
+	    <!-- 下面这句很重要，后面有解释 -->  
+	    <property name="hibernate.c3p0.testConnectionOnCheckout">true</property> 
+		
+		<!-- 开启二级缓存 -->
+		<property name="hibernate.cache.use_query_cache">false</property>
+		<property name="hibernate.cache.use_second_level_cache">false</property>
+		<property name="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</property>
+		<property name="hibernate.cache.provider_configuration_file_resource_path">res/ehcache.xml</property>
+		
+		<!-- 让hibernate自动创建表 ,create表示每次都创建新表，update表示更新 -->
+		<!-- <property name="hbm2ddl.auto">update</property> -->
+		<!-- 指定对象关系映射文件 -->
+		<mapping class="com.wl.szcloud.model.SzcloudUserVO" />
+		<mapping class="com.wl.szcloud.model.GroupVO" />
+		<mapping class="com.wl.szcloud.model.UserRoleVO" />
+		<mapping class="com.wl.szcloud.model.RoleInfoVO" />
+		
+		<!-- 指定缓存策略(使用注解替代) -->
+		<!-- <class-cache usage="read-write" class="com.wl.szcloud.model.SzcloudUserVO"/>
+		<class-cache usage="read-write" class="com.wl.szcloud.model.GroupVO"/>
+		<class-cache usage="read-write" class="com.wl.szcloud.model.UserRoleVO"/>
+		<class-cache usage="read-write" class="com.wl.szcloud.model.RoleInfoVO"/> -->
+	</session-factory>
+</hibernate-configuration>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<!-- 汉诺塔 -->
+<!-- author: wl -->
+<!-- date: 2015-09-29 -->
+<html>
+  <head>
+     <meta charset="utf-8"/>
+  </head>
+  <body onload="init()">
+  <div>
+      <div id="menu" style="position:absolute;left:550px;">
+	          设置盘子数量:<input id = "num" type="number" value=2 />
+		  <input type="button" onclick = "startGame()" value="重新开始"/>
+	  </div>
+     <div id="first" style="width:300px;height:600px;border:1px solid blue;position:absolute;top:50px" ondragover="allowDrop(event)" ondrop="drop(event)">
+	 </div>
+	 
+	 <div id="second" style="width:300px;height:600px;border:1px solid blue;position:absolute;left:500px;top:50px" ondragover="allowDrop(event)" ondrop="drop(event)">
+	 </div>
+	 
+	 <div id="third" style="width:300px;height:600px;border:1px solid blue;position:absolute;left:1000px;top:50px" ondragover="allowDrop(event)" ondrop="drop(event)">
+	 </div>
+	 
+	 <div id="tipInfo" style="position:absolute;left:550px;top:700px;">
+	 </div>
+  </div>
+  </body>
+  <script>
+      //定义盘子数量，并用户判读是否成功
+      var num = 2;
+      function init(){
+	      initHanoi(num);
+	  }
+	  
+	  //开始游戏
+	  function startGame(){
+		  var input = document.getElementById("num").value;
+		  if(input == "" || input <= 0){
+			  alert("请输入一个正数！");
+			  if(num > 2 && num <12){
+				  document.getElementById("num").value = Number(num) + 1;
+			  }else{
+				  document.getElementById("num").value = 2;
+			  }
+		  }
+		  
+	      input = document.getElementById("num").value;
+	      
+		  if(input > 12){
+			  alert("我不认为你这凡人能完成,还是先挑战下12个吧");
+			  input = document.getElementById("num").value = 12;
+		  }
+		  
+		  num = input;
+		  //初始化盘子
+		  initHanoi(num);
+		  //清空提示信息
+		  document.getElementById('tipInfo').innerHTML = '';
+	  }
+	  
+	  //提示警告信息
+	  function showInfo(info){
+		  document.getElementById("tipInfo").innerHTML = "<span style='color:red'>" + info  + "</span>";
+		  setTimeout("document.getElementById('tipInfo').innerHTML = ''", 5000);
+	  }
+	  
+	  //初始化盘子
+	  function initHanoi(num){
+	     //先清空所有盘子
+		 removeAllChild(document.getElementById("first"));
+		 removeAllChild(document.getElementById("second"));
+		 removeAllChild(document.getElementById("third"));
+	     for(var i = 0; i<num; i++){
+		    var hanoi = document.createElement("div");
+			hanoi.setAttribute("id","hanoi" + i);
+			hanoi.setAttribute("style","width:" + (280 - 20*i) + "px;height:50px;border:1px solid blue;background-color:#70E1FF;position:absolute;margin-top:" + (548 - i * 50) + "px;margin-left:" + (i+1)*10 + "px");
+			hanoi.setAttribute("draggable","true");
+			hanoi.setAttribute("ondragstart","dragStart(event)");
+			var firstNode = document.getElementById("third").firstChild;
+			document.getElementById("third").insertBefore(hanoi, firstNode);
+		 }
+	  }
+	  
+	  //移除div所有子节点
+	  function removeAllChild(parentDiv){
+	      while(parentDiv.hasChildNodes()){
+		      parentDiv.removeChild(parentDiv.firstChild);
+		  }
+	  }
+	  
+	  //开始拖动
+	  function dragStart(ev){
+	     //判断是否是第一个盘子
+		 if(!ev.target.previousSibling){
+		    ev.dataTransfer.setData("dragId",ev.target.id);
+		 }else{
+			 showInfo("只能拖动最上面的盘子");
+		 }
+	  }
+	  
+	  //允许放置
+	  function allowDrop(ev){
+	     ev.preventDefault();
+	  }
+	  
+	  //停止拖动
+	  function drop(ev){
+	     ev.preventDefault();
+		 var dragId = ev.dataTransfer.getData("dragId");
+		 if(!dragId){
+		    return;
+		 }
+		 var dragObj = document.getElementById(dragId);
+		 var Nodes = ev.target.childNodes;
+		 //防止拖到其他胖子中了(盘子div的length为0)
+		 if(Nodes.length == 0 && ev.target.id != "first" && ev.target.id != "second" && ev.target.id != "third"){
+		    showInfo("只能放在最上面");
+		    return;
+		 }
+		 //当目标槽已有盘子时，要判断拖动的盘子是否小于现有最上面的盘子
+		 if(Nodes.length > 0){
+		    //if(Number(Nodes[0].style.width.replace('px','')) < Number(dragObj.style.width.replace('px',''))){
+		    if(parseInt(Nodes[0].style.width) < parseInt(dragObj.style.width)){ //parseInt会直接去掉后面的px，更方便
+               showInfo("不能放在比自己小的盘子上面");
+			   return;
+			}
+			//还在自己的盘槽
+			if(Nodes[0].style.width == dragObj.style.width){
+			   return;
+			}
+		 }
+		 dragObj.style.marginTop = 548 - Nodes.length * 50 + "px";
+		 ev.target.insertBefore(dragObj, Nodes[0]);
+		 //判断是否成功
+		 if(ev.target.id == "first"){
+		    if(Nodes.length == num){ //插入后node会自动增加一个
+			    document.getElementById("tipInfo").innerHTML = "<span style='color:green'>Congratulations! You done it.</span>";
+			    alert("Congratulations! You done it.");
+			}
+		 }
+	  }
+	  
+  </script>
+</html> 

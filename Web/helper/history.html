@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>历史记录</title>
+</head>
+<body onload="init()">
+   <input type="Button" value ="清空记录" onclick ="clearHistory()">
+   <div id = "history"></div>
+</body>
+<script>
+ function init(){
+	 showHistory();
+ }
+ function showHistory(){
+	 if(localStorage){
+	      document.getElementById("history").innerHTML = localStorage.getItem("history");
+	  }else{
+	      document.getElementById("history").innerHTML = "浏览器不支持";
+	  }
+ }
+ 
+ function clearHistory(){
+	 if(localStorage){
+		 localStorage.clear();
+		 showHistory();
+	 }else{
+		 alert("浏览器不支持。")
+	 }
+ }
+	 // localStorage.clear();
+</script>
+</html>

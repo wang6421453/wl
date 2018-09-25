@@ -1,0 +1,93 @@
+.both_center {
+   width:400px;
+   height:300px;
+   position:absolute;
+   top:50%;
+   left:50%;
+   margin:-300px 0 0 -200px;
+   text-align: center;
+}
+
+.result_list {
+   width:1000px;
+   height:400px;
+   position:absolute;
+   top:50%;
+   left:50%;
+   margin:50px 0 0 -500px;
+   text-align: center;
+}
+
+/* 政务云的列表 */
+.result_list_merge {
+   width:1500px;
+   height:400px;
+   position:absolute;
+   top:50%;
+   left:50%;
+   margin:50px 0 0 -750px;
+   text-align: center;
+}
+
+.result_list th{
+	font-family: "Times New Roman", Times, serif;
+	FONT-SIZE: 11pt; 
+	COLOR: #d06f0d;
+	text-align:center;
+}
+
+.result_list_merge th{
+	font-family: "Times New Roman", Times, serif;
+	FONT-SIZE: 11pt; 
+	COLOR: #d06f0d;
+	text-align:center;
+}
+
+.tip_info {
+   width:200px;
+   height:20px;
+   position:absolute;
+   top:50%;
+   left:50%;
+   margin: 10px 0 0 -100px;
+   text-align: center;
+}
+
+.statistics_info  {
+   width:300px;
+   height:20px;
+   position:absolute;
+   top:97%;
+   left:50%;
+   margin:0px 0 0 -150px;
+   text-align: center;
+}
+
+.litter_helper {
+   height:22px;
+   position:absolute;
+   right:0;
+   margin: 6px 20px 0 0;
+}
+
+.litter_helper_admin {
+   height:22px;
+   position:absolute;
+   right:0;
+   margin: 6px 60px 0 0;
+}
+
+.others_admin {
+   height:22px;
+   position:absolute;
+   right:0;
+   margin: 6px 20px 0 0;
+}
+
+.news {
+   height:22px;
+   position:absolute;
+   left:45%;
+   margin: 6px 20px 0 0;
+   color:red;
+}

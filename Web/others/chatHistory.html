@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="../css/bootstrap.min.css">
+  <script type="text/javascript" src="../js/socket.io.js"></script>
+  <body>
+  <style>
+     .send_btn{
+	    width:200px;height:80px;color:green;background:#ffcc00;border:0px;hover:background:red;
+	 }
+     .send_btn:hover{
+	   background:#00ff00;
+	 }
+	 .send_eidt{
+	   height:100px;width:75%;border:1px solid #00ff00;overflow: auto;float:left
+	 }
+  </style>
+  <div>
+     <div id ='login_div' class="form-group" style="margin-top:200px">
+	      <div class="col-md-3 col-md-offset-3">
+	           <input class="form-control" id="name" placeholder="请输入昵称..." />
+	      </div>
+	      <div class="col-md-2" style="margin-top:-5px">
+	          <button id ="login" type="button" class="btn btn-lg btn-success btn-block" onclick="login()">开始吐槽</button>
+		  </div>
+	 </div>
+	 
+	 
+	 <div id="chat_div" style="display:none;width:60%;margin-left:100px">
+	   <h1>欢迎进入聊天室</h1>
+	    <div id="chatContent" style="height:600px;border:1px solid #00ff00;overflow: auto;"></div>
+	    <div id="functionBtn">
+		    <div style="float:left"><input type="button" value="图片"></input></div>
+		    <div style="float:left"><input type="button" value="聊天记录" onclick="showChatHistory()"></input></div>
+		    <div style="clear:both"></div>
+	    </div>
+	    <div>
+	       <div id="sendContent" contenteditable="true" class="send_eidt" onkeydown="keydownListen(event)" onpaste="pasteListen(event)"></div>
+	       <div style="float:left;height:50px;margin-top:10px;margin-left:30px"><input  class="send_btn" type="button" value="吐槽（ctrl+Enter）" onclick="send()"></input></div>
+	    </div>
+	 </div>
+  </div>
+  </body>
+  <script>
+	 var socket={};
+	 var name="";
+	 //登陆并监听消息
+	 function login(){
+	      socket = io.connect("http://10.67.7.13:1337");
+		  name = document.getElementById("name").value;
+		  //emit可以自定义消息头，而send固定为message（实践得出，不一定正确）
+		  socket.emit('login', {"name":name});
+	      socket.on("login", function(msg){
+		  console.log(msg.status);
+		  if(msg.status == 'ok'){
+		     //alert("登陆成功");
+			 document.getElementById("login_div").style.display = "none";
+			 document.getElementById("chat_div").style.display = "block";
+		  }else{
+		     alert("登陆失败");
+		  }
+	     });
+	      
+	     //监听服务端消息
+	     socket.on("msg", function(msg){
+	    	  var chatContent_div = document.getElementById("chatContent");
+	    	  chatContent_div.innerHTML += ("</br>" + msg.name + ": " + msg.content);
+	    	  //使消息始终保持在最底端
+	    	  chatContent_div.scrollTop = chatContent_div.scrollHeight;
+		 });
+	 }
+	 
+	 //发送消息
+	 function send(){
+		 var content = document.getElementById("sendContent").innerHTML;
+		 //document.getElementById("chatContent").innerHTML += ("</br>" + name + ": " + content);
+		 socket.emit('msg', {"name":name,"content":content});
+		 document.getElementById("sendContent").innerHTML = "";
+	};
+		
+	//监听按钮
+	function keydownListen(event){
+		if(event.ctrlKey && event.keyCode == 13){
+			send();
+		}
+	}
+	
+	//监听粘贴事件
+	function pasteListen(event){
+		var pasteContent = null;
+		if(window.clipboardData && window.clipboardData.getData){ //IE	
+			pasteContent = window.clipboardData.getData("Text");
+		}else{
+			//pasteContent = event.clipboardData.getData("Text"); //chrome等其他浏览器
+			var clipboardData = event.clipboardData;
+			var items,item,types;
+			if(clipboardData){
+				items = clipboardData.items;
+				types = clipboardData.types;
+				for(var i = 0; i<items.length; i++){
+					if(types[i] == "Files" && items[i] && items[i].type.match(/^image\//i)){
+						readImg(items[i]);
+					}else if(items[i] && items[i].type.match(/^text\//i)){
+						pasteContent = event.clipboardData.getData("Text");
+					}
+				}
+			}
+		}
+		//event.clipboardData.clearData("Text");
+		//event.clipboardData.setData("Text", "");
+		//event.returnValue = false;  //禁止粘贴
+		return true;   //作用不大
+	}
+	
+	//读取图像
+	function readImg(item){
+		var file = item.getAsFile();
+		var fileReader = new FileReader(); 
+		fileReader.onload = function(e){
+			var img = new Image();
+			img.src = e.target.result;
+			document.getElementById("sendContent").appendChild(img);
+		}
+		fileReader.readAsDataURL(file);
+	}
+	
+	//显示聊天记录
+	function showChatHistory(){
+		window.open('chatHistory.jsp');
+	}
+  </script>
+</html>

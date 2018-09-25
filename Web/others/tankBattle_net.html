@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<!-- 坦克大战_面向对象_v2 -->
+<head>
+  <meta charset="UTF-8">
+  <title>坦克大战——网络版</title>
+  <script type="text/javascript" src="../js/socket.io.js"></script>
+</head>
+<body onload="init()" onkeydown="getCommond(event)">
+  <div style="width:4000px;height:4000px;position:absolute;left:30%;top:30%;">
+	  <div style="float:left">
+	   <canvas id="tankMap" width="400px" height="300px" style="background-color:#000000">
+	                        浏览器太低级，请换Chrome
+	   </canvas>
+	  </div>
+	  <div class="Info" style="position:absolute;left:500px;line-height:25px;width:303px;height:302px;overflow:hidden"">
+	      <div id = "top" style="width:4000px; border-top:dashed 2px #DADDE1;position:relative;left:-400px;"></div>
+		  <div id = "left" style="width:1px;height:4000px; border-left:dashed 2px #DADDE1 ;position:relative;"></div>
+		  <div style="position:absolute;top:30px;left:30px">
+			  W ---> 向上</br>
+			  D ---> 向右</br>
+			  S ---> 向下</br>
+			  A ---> 向左</br>
+			     方向键控制第二个坦克</br>
+			     空格和Enter为发射子弹</br>
+			  K键停止第二个坦克的自由运动
+		  </div>
+		  <div id = "right" style="width:1px;height:4000px; border-right:dashed 2px #DADDE1;position:absolute;top:-400px;left:300px"></div>
+		  <div id = "bottom" style="width:4000px; border-bottom:dashed 2px #DADDE1 ;position:absolute;top:300px;"></div>	  
+	   </div>
+   </div>
+</body>
+<script language="javascript">
+
+  function init(){
+	  myHero = new HeroTank(115,285,0);
+	  myHero2 = new HeroTank(265,205,0);
+	  borderMove();
+	  initWebSocket();
+	  //myHero.draw();
+	  emeryClock = setInterval("control()", 1000);
+  }
+  
+  //webScoket
+  function initWebSocket(){
+	  /* var ws = new WebSocket("ws://10.67.7.13:1337");
+	  ws.onopen = function(){
+		  console.log("open");
+		  ws.send("hello");
+	  }
+	  
+	  ws.onmessage = function(evt){
+		  console.log(evt.data);
+	  }
+	  
+	  ws.onclose = function(evt){
+		  console.log("WebSocket Closed!");
+	  }
+	  
+	  ws.onerror = function(evt){
+		  console.log("WebSocket Error!");
+	  }  */
+	  var socket = io.connect("http://10.67.7.13:1337");
+	  socket.on("msg", function(msg){
+		  console.log(msg.msg);
+		  console.log(msg.status);
+	  });
+	  //emit可以自定义消息头，而send固定为message（实践得出，不一定正确）
+	  socket.emit('msg', {msg:'wl'});
+   }
+  
+  
+  //得到画布
+  var canvas1 = document.getElementById("tankMap");
+  //得到绘图上下文（可以理解为画笔）
+  var cxt = canvas1.getContext("2d");
+  //定义二个英雄坦克的全局对象
+  var myHero;
+  var myHero2;
+  //屏幕的宽度和高度
+  var width=400;
+  var height=300;
+  //坦克的宽度和高度
+  var tankWidth=30;
+  var tankHeight=30;
+  //定时器
+  var shootClock=0;
+  var emeryClock=0;
+  //封装一个英雄坦克类
+  var HeroTank = function(x,y,direction){
+	  //圆心位置
+	  this.x = x;
+	  this.y = y;
+	  //Tank方向
+	  this.direction = direction;
+	  //子弹位置
+	  this.bulletX;
+	  this.bulletY;
+	  
+	  //画出自己的坦克
+      this.draw = function(){
+		  switch(this.direction){
+		     case 0:  //向上
+			 case 2:  //向下
+				  cxt.fillStyle="#ba9658";
+				  //画出左边的矩形
+				  cxt.fillRect(this.x-15,this.y-15,7,30);
+				  //画出右边的矩形
+				  cxt.fillRect(this.x+8,this.y-15,7,30);
+				  //画出中间的矩形
+				  cxt.fillRect(this.x-7,this.y-10,14,20);
+				  //画出中间的园 
+				  cxt.fillStyle="#fef26e";
+				  cxt.beginPath();
+				  cxt.arc(this.x,this.y,5,0,360,true);
+				  cxt.closePath();
+				  cxt.fill();	  
+				  //画出炮筒
+				  cxt.strokeStyle="#fef26e";
+				  cxt.lineWidth=2;
+				  cxt.beginPath();
+				  cxt.moveTo(this.x,this.y);
+				  if(this.direction == 0){
+				     cxt.lineTo(this.x,this.y-13);
+				  }else{
+					  cxt.lineTo(this.x,this.y+13);
+				  }
+				  
+				  cxt.closePath();
+				  cxt.stroke();
+				  break;
+		     case 1: //向右
+			 case 3: //向左
+				  cxt.fillStyle="#ba9658";
+				  //画出上边的矩形
+				  cxt.fillRect(this.x-15,this.y-15,30,7);
+				  //画出下边那的矩形
+				  cxt.fillRect(this.x-15,this.y+8,30,7);
+				  //画出中间的矩形
+				  cxt.fillRect(this.x-10,this.y-7,20,14);
+				  //画出中间的园 
+				  cxt.fillStyle="#fef26e";
+				  cxt.beginPath();
+				  cxt.arc(this.x,this.y,5,0,360,true);
+				  cxt.closePath();
+				  cxt.fill();	  
+				  //画出炮筒
+				  cxt.strokeStyle="#fef26e";
+				  cxt.lineWidth=2;
+				  cxt.beginPath();
+				  cxt.moveTo(this.x,this.y);
+				  if(this.direction == 1){
+				     cxt.lineTo(this.x+13,this.y);
+				  }else{
+					  cxt.lineTo(this.x-13,this.y);
+				  }
+				  cxt.closePath();
+				  cxt.stroke();
+				  break;
+		  }
+		  
+	   }
+	   //画出
+	   this.draw();
+	   //向上移动
+	   this.moveUp = function(){
+		  //小范围清屏(只亲坦克原来位置部门)
+	      cxt.clearRect(this.x-15,this.y-15,tankWidth,tankHeight);
+		  //判断是否到顶
+		  if(this.y<=tankHeight/2){
+		     this.y=tankHeight/2;
+		  }else if(this.direction == 0){ //只有原方向是向上的才会移动，不然只会改变方向
+		     this.y-=10;
+		  }
+		  this.direction = 0;
+		  this.draw();
+	   }
+	   this.moveRight = function(){
+		  //小范围清屏(只亲坦克原来位置部门)
+	      cxt.clearRect(this.x-15,this.y-15,tankWidth,tankHeight);
+		  //判断是否到了最右边
+		  if(this.x>=width-tankHeight/2){
+		      this.x=width-tankHeight/2;
+		  }else if(this.direction == 1){
+		      this.x+=10;
+		  }
+		  this.direction = 1;
+		  this.draw();
+	   }
+	   this.moveDown = function(){
+		  //小范围清屏(只亲坦克原来位置部门)
+	      cxt.clearRect(this.x-15,this.y-15,tankWidth,tankHeight);
+		  //判断是否到了最下边
+		  if(this.y>=height-tankHeight/2){
+		     this.y =height-tankHeight/2;
+		  }else if(this.direction == 2){
+		     this.y+=10;
+		  }	      
+		  this.direction = 2;
+		  this.draw();
+	   }
+	   this.moveLeft = function(){
+		  //小范围清屏(只亲坦克原来位置部门)
+	      cxt.clearRect(this.x-15,this.y-15,tankWidth,tankHeight);
+		  //判断是否到了最左边
+		  if(this.x<=tankHeight/2){
+		     this.x =tankHeight/2;
+		  }else if(this.direction == 3){
+		     this.x-=10;
+		  }	      
+		  this.direction = 3;
+		  this.draw();
+	   }
+
+	   //设置子弹位置
+	   var bulletX=null,bulletY=null;
+
+	   drawBullet=function(x,y,direction){
+			 switch (direction){
+			   case 0:
+			       if(bulletX ==null){
+			          bulletX=x;
+			          bulletY=y-20;
+				   }else{
+					   cxt.clearRect(bulletX-1,bulletY,2,12);
+				   }
+                   cxt.strokeStyle="#fef26e";
+				   cxt.lineWidth=2;
+				   cxt.beginPath();
+				   cxt.moveTo(bulletX,bulletY);
+				   cxt.lineTo(bulletX,bulletY-2);
+				   cxt.closePath();
+				   cxt.stroke();
+				   bulletY-=10;
+				   if(bulletY<-12){
+					   bulletX=null;
+					   bulletY=null;
+					   clearInterval(shootClock);
+					   shootClock=0;	  
+					  }
+					  break;
+			   case 1:
+			       if(bulletX ==null){
+					   bulletX=x+20;
+					   bulletY=y;
+					 }else{
+						 cxt.clearRect(bulletX-12,bulletY-1,12,2);
+					 }
+				   cxt.strokeStyle="#fef26e";
+				   cxt.lineWidth=2;
+				   cxt.beginPath();
+				   cxt.moveTo(bulletX,bulletY);
+				   cxt.lineTo(bulletX+2,bulletY);
+				   cxt.closePath();
+				   cxt.stroke();
+				   bulletX+=10;
+				   if(bulletX>width+12){
+					   bulletX=null;
+					   bulletY=null;
+					   clearInterval(shootClock);
+					   shootClock=0;	  
+					  }
+					  break;
+			   case 2:
+			      if(bulletX ==null){
+					   bulletX=x;
+					   bulletY=y+20;
+				   }else{
+					   cxt.clearRect(bulletX-1,bulletY-12,2,12);
+					   }
+					   cxt.strokeStyle="#fef26e";
+					   cxt.lineWidth=2;
+					   cxt.beginPath();
+					   cxt.moveTo(bulletX,bulletY);
+					   cxt.lineTo(bulletX,bulletY+2);
+					   cxt.closePath();
+					   cxt.stroke();
+					   bulletY+=10;
+					   if(bulletY>height+12){
+						   bulletX=null;
+						   bulletY=null;
+						   clearInterval(shootClock);
+						   shootClock=0;	  
+						  } 
+						  break;
+			   case 3:
+			     if(bulletX ==null){
+					   bulletX=x-20;
+					   bulletY=y;
+				   }else{
+					   cxt.clearRect(bulletX,bulletY-1,12,2);
+					 }
+					   cxt.strokeStyle="#fef26e";
+					   cxt.lineWidth=2;
+					   cxt.beginPath();
+					   cxt.moveTo(bulletX,bulletY);
+					   cxt.lineTo(bulletX-2,bulletY);
+					   cxt.closePath();
+					   cxt.stroke();
+					   bulletX-=10;
+					   if(bulletX<-12){
+						   bulletX=null;
+						   bulletY=null;
+						   clearInterval(shootClock);
+						   shootClock=0;	  
+						  }
+						  break;
+			 }
+	   }
+
+       //发射子弹
+	   this.shoot = function(){
+		   if(shootClock == 0){
+				shootClock = setInterval("drawBullet("+this.x+","+this.y+","+this.direction+")",100);
+			 }
+		}
+  }
+
+
+   //自动移动和发射
+   function control(){
+	   var order = parseInt(Math.random()*10)%6;
+	   switch(order){
+		   case 0:myHero2.moveUp();break;
+		   case 1:myHero2.moveLeft();break;
+		   case 2:myHero2.moveDown();break;
+		   case 3:myHero2.moveRight();break;
+		   case 4:
+		   case 5:myHero2.shoot();break;
+		}
+	 }
+  
+ 
+  
+  
+  function getCommond(event){
+	  //alert(event.keyCode);
+     switch(event.keyCode){
+	   //上
+	   case 87: myHero.moveUp();break;//W
+	   case 38: myHero2.moveUp();break;
+	   //左
+	   case 65: myHero.moveLeft();break;//A
+	   case 37: myHero2.moveLeft();break;
+	   //右
+	   case 68: myHero.moveRight();break;//D
+	   case 39: myHero2.moveRight();break;
+	   //下
+	   case 83: myHero.moveDown();break;//S
+	   case 40: myHero2.moveDown();break;
+	   //空格
+       case 32: myHero.shoot();break;
+	   //enter键
+	   case 13: myHero2.shoot();break;
+	   case 75: clearInterval(emeryClock);break;
+	 }
+  }
+  
+  //提示信息边框移动
+  function borderMove(){
+     var top_Left = Number(document.getElementById("top").style.left.replace("px",""));
+     var left_top = Number(document.getElementById("left").style.top.replace("px",""));
+	 var right_top = Number(document.getElementById("right").style.top.replace("px",""));
+	 var bottom_left = Number(document.getElementById("bottom").style.left.replace("px",""));
+	 
+	 setInterval(function(){
+	   top_Left += 2;
+	   left_top -= 2;
+	   right_top += 2;
+	   bottom_left -= 2;
+	   if(top_Left > 0){
+	      top_Left = -400;
+	   }
+	   if(left_top < -400){
+	      left_top = 0;
+	   }
+	   if(right_top > 0){
+	      right_top = -400;
+	   }
+	   if(bottom_left < -400){
+	      bottom_left = 0;
+	   }
+	   document.getElementById("top").style.left = top_Left + "px";
+	   document.getElementById("left").style.top = left_top + "px";
+	   document.getElementById("right").style.top = right_top + "px";
+	   document.getElementById("bottom").style.left = bottom_left + "px";
+	 },60);
+  }
+</script>
+</html>
